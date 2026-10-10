@@ -1,0 +1,20 @@
+a { color: var(--accent); }
+textarea { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .7rem; font: inherit; min-width: 0; width: 100%; resize: vertical; }
+textarea:focus { outline: 2px solid var(--accent); }
+input[type=text], input[type=password], select { width: 100%; }
+input[type=checkbox] { width: auto; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.portal-card { width: min(460px, 100%); }
+.banner { padding: 1rem 1.2rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+.banner h2 { margin: 0 0 .35rem; font-size: 1.1rem; }
+.banner p { margin: .25rem 0 0; }
+.banner-good { border-color: var(--good); background: rgba(62, 207, 142, .08); }
+.banner-warn { border-color: var(--warn); background: rgba(245, 185, 66, .08); }
+.banner-bad { border-color: var(--bad); background: rgba(255, 107, 107, .08); }
+.snippet { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .8rem; overflow-x: auto; font-size: .8rem; margin: 0; white-space: pre; }
+.sparkline { display: flex; align-items: flex-end; gap: 3px; height: 36px; margin-top: .6rem; }
+.spark { flex: 1; background: var(--accent); border-radius: 2px; opacity: .85; }
+.danger-zone { border: 1px solid var(--bad); border-radius: var(--radius); padding: 1rem 1.2rem; margin-top: 2rem; }
+.section { margin-bottom: 1.5rem; }
+.side-status { margin: auto 0 .5rem; padding: 0 .75rem; }
+.link-btn { margin-top: 0; }
