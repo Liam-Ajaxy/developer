@@ -1,16 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https: http://localhost:*; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0B0D12">
   <title>Frank AI · Developers</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2.5 28 9.25v13.5L16 29.5 4 22.75V9.25z' fill='%23C65D24'/%3E%3Cpath d='M16 9l6.5 3.75v6.5L16 23l-6.5-3.75v-6.5z' fill='%23F3B77C'/%3E%3C/svg%3E">
+  <script src="js/theme-boot.js"></script>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/portal.css">
+  <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
   <div id="app"></div>
+  <noscript><p class="noscript">Frank AI Developers needs JavaScript to run.</p></noscript>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

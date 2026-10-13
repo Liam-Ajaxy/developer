@@ -1,6 +1,6 @@
 import { api, session } from "../api.client.js";
 import { h } from "../dom.util.js";
-import { brand, field, errorLine, showSecret } from "../ui.util.js";
+import { brand, field, errorLine, showSecret, setBusy } from "../ui.util.js";
 
 export async function render(box) {
   const contact = h("input", { type: "text", required: true, autocomplete: "username" });
@@ -8,11 +8,11 @@ export async function render(box) {
   const password = h("input", { type: "password", minlength: 10, maxlength: 200, required: true, autocomplete: "new-password" });
   const again = h("input", { type: "password", maxlength: 200, required: true, autocomplete: "new-password" });
   const error = errorLine();
-  const submit = h("button", { class: "btn", type: "submit" }, "Set new password");
+  const submit = h("button", { class: "btn btn-lg", type: "submit" }, "Set new password");
 
   const form = h(
     "form",
-    {},
+    { class: "auth-form" },
     field("Email or phone", contact),
     field("Recovery code", code, "The code you saved when you signed up, or a reset code from the Frank AI team."),
     field("New password", password, "At least 10 characters."),
@@ -27,7 +27,7 @@ export async function render(box) {
       error.textContent = "The two passwords don't match.";
       return;
     }
-    submit.disabled = true;
+    setBusy(submit, true);
     try {
       const out = await api("/reset", {
         method: "POST",
@@ -45,14 +45,15 @@ export async function render(box) {
     } catch (err) {
       error.textContent = err.message;
     } finally {
-      submit.disabled = false;
+      setBusy(submit, false);
     }
   });
 
   box.append(
     brand(),
     h("h1", {}, "Reset your password"),
+    h("p", { class: "muted" }, "Use your recovery code to set a new password."),
     form,
-    h("p", { class: "muted small" }, h("a", { href: "#/login" }, "Back to login"))
+    h("p", { class: "muted small auth-links" }, h("a", { href: "#/login" }, "Back to login"))
   );
 }

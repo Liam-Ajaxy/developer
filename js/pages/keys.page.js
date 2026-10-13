@@ -1,6 +1,7 @@
 import { api } from "../api.client.js";
 import { h, badge, table, fmtAgo } from "../dom.util.js";
-import { field, errorLine, openDialog, showSecret, snippetBlock, browserSnippet, serverSnippet } from "../ui.util.js";
+import { icon } from "../icons.js";
+import { field, errorLine, openDialog, showSecret, codeBlock, browserSnippet, serverSnippet, confirmDialog, toast, callout, setBusy, pageHead } from "../ui.util.js";
 
 let flash = null; // a message to show after the page re-renders
 
@@ -12,12 +13,7 @@ export async function render(container, { profile, refresh }) {
   const { keys, max_keys } = await api("/keys");
   const active = keys.filter((k) => k.active);
 
-  const notice = h("p", { class: "notice", hidden: true });
-  function say(text, kind = "good") {
-    notice.hidden = false;
-    notice.className = `notice notice-${kind}`;
-    notice.textContent = text;
-  }
+  const say = (text, kind = "good") => toast(text, kind);
   if (flash) {
     say(flash);
     flash = null;
@@ -27,49 +23,55 @@ export async function render(container, { profile, refresh }) {
     refresh();
   };
 
-  const keySnippet = (type, key) => snippetBlock(type === "public" ? browserSnippet(key) : serverSnippet(key));
+  const keySnippet = (type, key) => codeBlock(type === "public" ? browserSnippet(key) : serverSnippet(key), { title: type === "public" ? "browser.js" : "server.js" });
+
+  const formButtons = (submitLabel, close) => {
+    const submit = h("button", { type: "submit", class: "btn" }, submitLabel);
+    return [submit, h("div", { class: "actions actions-end" }, h("button", { type: "button", class: "btn btn-ghost", onclick: () => close() }, "Cancel"), submit)];
+  };
 
   function openCreate() {
     const canSecret = dev.status === "approved" && dev.secret_allowed;
-    const type = h(
-      "select",
-      {},
-      h("option", { value: "public" }, "Public key: your website's frontend (chat only)"),
-      h("option", { value: "secret", disabled: !canSecret }, canSecret ? "Secret key: your server (chat, image, voice)" : "Secret key: needs approval first")
+    const choice = (value, title, desc, disabled) =>
+      h(
+        "label",
+        { class: disabled ? "choice is-disabled" : "choice" },
+        h("input", { type: "radio", name: "keytype", value, checked: value === "public", disabled }),
+        h("span", { class: "choice-body" }, h("strong", {}, title), h("small", {}, desc))
+      );
+    const types = h(
+      "fieldset",
+      { class: "choice-group" },
+      h("legend", {}, "Type"),
+      choice("public", "Public key", "For your website's frontend. Chat only.", false),
+      choice("secret", "Secret key", canSecret ? "For your server. Chat, image and voice." : "Needs approval first.", !canSecret)
     );
     const label = h("input", { type: "text", maxlength: 60, placeholder: "e.g. portfolio site" });
     const sites = h("textarea", { rows: 3, placeholder: "https://my-site.vercel.app" });
     const localhost = h("input", { type: "checkbox", checked: true });
     const sitesRow = field("Your site addresses (one per line)", sites, "Only these sites can use the key from a browser.");
     const localRow = h("label", { class: "check" }, localhost, " Also allow http://localhost while I develop");
+    const secretNote = callout("warn", "Server use only", "A secret key must never appear in frontend code, a web page, or a URL.");
+    secretNote.hidden = true;
     const error = errorLine();
-    type.addEventListener("change", () => {
-      sitesRow.hidden = localRow.hidden = type.value !== "public";
+    const kind = () => form.elements.keytype.value;
+    types.addEventListener("change", () => {
+      const isPublic = kind() === "public";
+      sitesRow.hidden = localRow.hidden = !isPublic;
+      secretNote.hidden = isPublic;
     });
 
-    const form = h(
-      "form",
-      { class: "stack" },
-      h("h3", {}, "Create a key"),
-      field("Type", type),
-      field("Label (optional)", label),
-      sitesRow,
-      localRow,
-      error,
-      h(
-        "div",
-        { class: "actions" },
-        h("button", { type: "button", class: "btn btn-ghost", onclick: () => close() }, "Cancel"),
-        h("button", { type: "submit", class: "btn" }, "Create key")
-      )
-    );
+    const [submit, buttons] = formButtons("Create key", () => close());
+    const form = h("form", { class: "stack" }, h("h3", {}, "Create a key"), types, field("Label (optional)", label), sitesRow, localRow, secretNote, error, buttons);
     const { close } = openDialog(form);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       error.textContent = "";
+      setBusy(submit, true);
       try {
-        const body = { type: type.value, label: label.value };
-        if (type.value === "public") {
+        const type = kind();
+        const body = { type, label: label.value };
+        if (type === "public") {
           body.origins = lines(sites.value);
           body.allow_localhost = localhost.checked;
         }
@@ -81,11 +83,12 @@ export async function render(container, { profile, refresh }) {
             ? "Copy it now. It cannot be shown again."
             : "Copy it now. It cannot be shown again. It starts working once your account is approved.",
           secret: out.key,
-          extra: keySnippet(type.value, out.key),
+          extra: keySnippet(type, out.key),
         });
         done("Key created.");
       } catch (err) {
         error.textContent = err.message;
+        setBusy(submit, false);
       }
     });
   }
@@ -98,28 +101,30 @@ export async function render(container, { profile, refresh }) {
     const sites = h("textarea", { rows: 3 }, k.origins.filter((o) => !isLocalhost(o)).join("\n"));
     const localhost = h("input", { type: "checkbox", checked: k.origins.some(isLocalhost) });
     const error = errorLine();
+    const [submit, buttons] = formButtons("Save", () => close());
     const form = h(
       "form",
       { class: "stack" },
       h("h3", {}, "Edit key"),
       field("Label", label),
-      field("Assistant name", assistant, "What your assistant calls itself. Leave blank for Frank AI."),
-      field("Model name", modelName, "Leave blank for Frank AI Sprinta 2."),
-      field("Company name", company, "Leave blank for Islle."),
+      h(
+        "fieldset",
+        { class: "identity" },
+        h("legend", {}, "Assistant identity"),
+        field("Assistant name", assistant, "What your assistant calls itself. Leave blank for Frank AI."),
+        field("Model name", modelName, "Leave blank for Frank AI Sprinta 2."),
+        field("Company name", company, "Leave blank for Islle.")
+      ),
       k.type === "public" ? field("Your site addresses (one per line)", sites) : null,
       k.type === "public" ? h("label", { class: "check" }, localhost, " Also allow http://localhost while I develop") : null,
       error,
-      h(
-        "div",
-        { class: "actions" },
-        h("button", { type: "button", class: "btn btn-ghost", onclick: () => close() }, "Cancel"),
-        h("button", { type: "submit", class: "btn" }, "Save")
-      )
+      buttons
     );
     const { close } = openDialog(form);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       error.textContent = "";
+      setBusy(submit, true);
       try {
         const body = { label: label.value, assistant_name: assistant.value, model_name: modelName.value, company_name: company.value };
         if (k.type === "public") {
@@ -131,12 +136,18 @@ export async function render(container, { profile, refresh }) {
         done("Key updated.");
       } catch (err) {
         error.textContent = err.message;
+        setBusy(submit, false);
       }
     });
   }
 
   async function rotate(k) {
-    if (!confirm("Create a new key and switch this one off? Anything using the old key stops working right away.")) return;
+    const ok = await confirmDialog({
+      title: "Rotate this key?",
+      body: "Create a new key and switch this one off. Anything using the old key stops working right away.",
+      confirmLabel: "Rotate key",
+    });
+    if (!ok) return;
     try {
       const out = await api(`/keys/${k.id}/rotate`, { method: "POST" });
       await showSecret({
@@ -152,7 +163,12 @@ export async function render(container, { profile, refresh }) {
   }
 
   async function revoke(k) {
-    if (!confirm("Revoke this key? Apps using it stop working right away.")) return;
+    const ok = await confirmDialog({
+      title: "Revoke this key?",
+      body: "Apps using it stop working right away. This cannot be undone.",
+      confirmLabel: "Revoke key",
+    });
+    if (!ok) return;
     try {
       await api(`/keys/${k.id}/revoke`, { method: "POST" });
       done("Key revoked.");
@@ -164,6 +180,7 @@ export async function render(container, { profile, refresh }) {
   function openSecretRequest() {
     const reason = h("textarea", { rows: 4, maxlength: 300, placeholder: "What are you building, and why does it need a secret key?" });
     const error = errorLine();
+    const [submit, buttons] = formButtons("Send request", () => close());
     const form = h(
       "form",
       { class: "stack" },
@@ -171,23 +188,20 @@ export async function render(container, { profile, refresh }) {
       h("p", { class: "muted" }, "Secret keys can use image generation and voice, and are for your server only."),
       field("Your reason", reason),
       error,
-      h(
-        "div",
-        { class: "actions" },
-        h("button", { type: "button", class: "btn btn-ghost", onclick: () => close() }, "Cancel"),
-        h("button", { type: "submit", class: "btn" }, "Send request")
-      )
+      buttons
     );
     const { close } = openDialog(form);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       error.textContent = "";
+      setBusy(submit, true);
       try {
         await api("/secret-request", { method: "POST", body: { reason: reason.value } });
         close();
         done("Request sent. We'll update your account when we've reviewed it.");
       } catch (err) {
         error.textContent = err.message;
+        setBusy(submit, false);
       }
     });
   }
@@ -198,42 +212,42 @@ export async function render(container, { profile, refresh }) {
   }
 
   const rows = active.map((k) => [
-    h("div", {}, h("strong", {}, k.label || "Untitled key"), h("div", { class: "muted small mono" }, k.id)),
+    h("div", { class: "key-id" }, h("strong", {}, k.label || "Untitled key"), h("div", { class: "muted small mono" }, k.id)),
     badge(k.type),
-    k.origins.length ? k.origins.join(", ") : "-",
+    k.origins.length ? h("div", { class: "chips" }, k.origins.map((o) => h("span", { class: "chip" }, o))) : "-",
     state(k),
     fmtAgo(k.last_used_at),
     h(
       "div",
       { class: "actions" },
-      h("button", { class: "btn btn-small btn-ghost", onclick: () => openEdit(k) }, "Edit"),
-      h("button", { class: "btn btn-small btn-ghost", onclick: () => rotate(k) }, "Rotate"),
-      h("button", { class: "btn btn-small btn-danger", onclick: () => revoke(k) }, "Revoke")
+      h("button", { class: "btn btn-small btn-ghost", type: "button", "aria-label": `Edit ${k.label || "key"}`, onclick: () => openEdit(k) }, icon("edit", 16), "Edit"),
+      h("button", { class: "btn btn-small btn-ghost", type: "button", "aria-label": `Rotate ${k.label || "key"}`, onclick: () => rotate(k) }, icon("rotate", 16), "Rotate"),
+      h("button", { class: "btn btn-small btn-danger", type: "button", "aria-label": `Revoke ${k.label || "key"}`, onclick: () => revoke(k) }, icon("trash", 16), "Revoke")
     ),
   ]);
 
+  const atLimit = active.length >= max_keys;
   const secretBlock =
     dev.status !== "approved" || dev.secret_allowed
       ? null
       : dev.secret_request
         ? h("p", { class: "muted" }, `Your secret key request is waiting for review: "${dev.secret_request}"`)
-        : h("button", { class: "btn btn-ghost", onclick: openSecretRequest }, "Request secret key access");
+        : h("button", { class: "btn btn-ghost", type: "button", onclick: openSecretRequest }, icon("lock", 18), "Request secret key access");
 
   container.replaceChildren(
-    h("h1", {}, "Keys"),
-    notice,
-    dev.status === "pending" ? h("p", { class: "notice notice-good" }, "Keys you create now start working as soon as your account is approved.") : null,
     h(
       "div",
-      { class: "toolbar" },
+      { class: "page" },
+      pageHead("Keys", "Public keys go in your website. Secret keys stay on your server."),
+      dev.status === "pending" ? callout("info", null, "Keys you create now start working as soon as your account is approved.") : null,
       h(
-        "button",
-        { class: "btn", disabled: dev.status === "suspended" || active.length >= max_keys, onclick: openCreate },
-        "Create key"
+        "div",
+        { class: "toolbar" },
+        h("button", { class: "btn", type: "button", disabled: dev.status === "suspended" || atLimit, onclick: openCreate }, icon("plus", 18), "Create key"),
+        h("span", { class: "muted small" }, `${active.length} of ${max_keys} keys used${atLimit ? ". Revoke one to create another." : ""}`),
+        secretBlock
       ),
-      h("span", { class: "muted small" }, `${active.length} of ${max_keys} keys used`),
-      secretBlock
-    ),
-    table(["Key", "Type", "Allowed sites", "State", "Last used", ""], rows, "No keys yet. Create your first one.")
+      table(["Key", "Type", "Allowed sites", "State", "Last used", "Actions"], rows, "No keys yet. Create your first one.")
+    )
   );
 }

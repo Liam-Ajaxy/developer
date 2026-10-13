@@ -1,10 +1,18 @@
+import { icon } from "./icons.js";
+
 // Builds DOM safely: text goes in as text, never as HTML, so nothing a developer types can run as code.
+// `style` takes an object (applied through the CSSOM, which the page's CSP allows); never an inline style string.
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
-  for (const [key, value] of Object.entries(attrs)) {
+  for (const [key, value] of Object.entries(attrs ?? {})) {
     if (value == null || value === false) continue;
     if (key === "class") el.className = value;
-    else if (key.startsWith("on") && typeof value === "function") el.addEventListener(key.slice(2).toLowerCase(), value);
+    else if (key === "style" && typeof value === "object") {
+      for (const [prop, v] of Object.entries(value)) {
+        if (prop.startsWith("--")) el.style.setProperty(prop, v);
+        else el.style[prop] = v;
+      }
+    } else if (key.startsWith("on") && typeof value === "function") el.addEventListener(key.slice(2).toLowerCase(), value);
     else el.setAttribute(key, value === true ? "" : String(value));
   }
   for (const child of children.flat(Infinity)) {
@@ -33,26 +41,37 @@ export function fmtAgo(iso) {
 
 export const badge = (text, kind = "muted") => h("span", { class: `badge badge-${kind}` }, text);
 
-export function card(label, value, sub) {
+// A stat card. `opts.icon` adds a glyph; `opts.extra` is appended below the value.
+export function card(label, value, sub, opts = {}) {
   return h(
     "div",
-    { class: "card" },
-    h("div", { class: "card-label" }, label),
+    { class: "card stat" },
+    h("div", { class: "card-label" }, opts.icon ? icon(opts.icon, 18) : null, label),
     h("div", { class: "card-value" }, value),
-    sub ? h("div", { class: "card-sub" }, sub) : null
+    sub ? h("div", { class: "card-sub" }, sub) : null,
+    opts.extra ?? null
   );
 }
 
+export function emptyState(text, iconName = "layers") {
+  return h("div", { class: "empty-state" }, icon(iconName, 28), h("p", {}, text));
+}
+
+// Rows become stacked cards on narrow screens: each cell carries its column name in data-label.
 export function table(headers, rows, emptyText = "Nothing here yet.") {
-  if (rows.length === 0) return h("p", { class: "empty" }, emptyText);
+  if (rows.length === 0) return emptyState(emptyText);
   return h(
     "div",
     { class: "table-wrap" },
     h(
-      "table",
-      {},
-      h("thead", {}, h("tr", {}, headers.map((t) => h("th", {}, t)))),
-      h("tbody", {}, rows.map((cells) => h("tr", {}, cells.map((c) => h("td", {}, c)))))
+      "div",
+      { class: "table-scroll" },
+      h(
+        "table",
+        {},
+        h("thead", {}, h("tr", {}, headers.map((t) => h("th", { scope: "col" }, t)))),
+        h("tbody", {}, rows.map((cells) => h("tr", {}, cells.map((c, i) => h("td", { "data-label": headers[i] || null }, c)))))
+      )
     )
   );
 }

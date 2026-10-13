@@ -1,6 +1,6 @@
 import { api, session } from "../api.client.js";
 import { h } from "../dom.util.js";
-import { brand, field, errorLine, showSecret } from "../ui.util.js";
+import { brand, field, errorLine, showSecret, setBusy } from "../ui.util.js";
 
 export async function render(box) {
   const name = h("input", { type: "text", maxlength: 80, required: true, autocomplete: "name" });
@@ -11,11 +11,11 @@ export async function render(box) {
   const trap = h("input", { type: "text", tabindex: "-1", autocomplete: "off" }); // honeypot for bots
   const accept = h("input", { type: "checkbox", required: true });
   const error = errorLine();
-  const submit = h("button", { class: "btn", type: "submit" }, "Request access");
+  const submit = h("button", { class: "btn btn-lg", type: "submit" }, "Request access");
 
   const form = h(
     "form",
-    {},
+    { class: "auth-form" },
     field("Your name", name),
     field("Email or phone", contact, "We reply here in the portal. Use something you can be reached on."),
     field("Password", password, "At least 10 characters."),
@@ -33,7 +33,7 @@ export async function render(box) {
       error.textContent = "The two passwords don't match.";
       return;
     }
-    submit.disabled = true;
+    setBusy(submit, true);
     try {
       const out = await api("/signup", {
         method: "POST",
@@ -58,7 +58,7 @@ export async function render(box) {
     } catch (err) {
       error.textContent = err.message;
     } finally {
-      submit.disabled = false;
+      setBusy(submit, false);
     }
   });
 
@@ -67,6 +67,6 @@ export async function render(box) {
     h("h1", {}, "Request access"),
     h("p", { class: "muted" }, "Free AI for your apps. Create your account and we'll review your request. You can check its status here any time."),
     form,
-    h("p", { class: "muted small" }, "Already have an account? ", h("a", { href: "#/login" }, "Log in"))
+    h("p", { class: "muted small auth-links" }, "Already have an account? ", h("a", { href: "#/login" }, "Log in"))
   );
 }
