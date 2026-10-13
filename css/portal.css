@@ -7,9 +7,7 @@
 .brand-name { font: 700 1.2rem/1 var(--font-display); letter-spacing: var(--ls-snug); }
 .brand-name span { color: var(--link); }
 .brand small { color: var(--text-3); font-size: 0.72rem; font-weight: 500; margin-left: 0.1rem; }
-.logo-hex { fill: none; stroke: var(--accent-2); stroke-width: 1.8; }
-.logo-in { fill: var(--accent); }
-.logo-dot { fill: var(--accent-ink); }
+.knot-logo-mark { flex: none; --knot-color-outer: var(--accent-2); --knot-color-inner: var(--accent); --knot-stroke-outer: 1.7; --knot-stroke-inner: 1.3; }
 
 /* ---------- app shell ---------- */
 .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; }
@@ -38,6 +36,7 @@
 .page-enter { animation: page-in var(--dur-med) var(--ease-out); }
 @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
 .retry { margin-top: var(--sp-3); }
+.page-loading { align-items: center; justify-content: center; min-height: min(60vh, 480px); }
 
 .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); }
 .lede { color: var(--text-2); margin-top: 0.4rem; max-width: 62ch; }

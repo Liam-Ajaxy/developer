@@ -1,4 +1,6 @@
 // Inline SVG icons. Markup below is static and trusted; it is parsed once per icon, never built from user text.
+import { KNOT_PATHS } from "./knot-streamer.js";
+
 const NS = "http://www.w3.org/2000/svg";
 
 const PATHS = {
@@ -47,14 +49,16 @@ export function icon(name, size = 20) {
   return svg;
 }
 
-// The Frank AI mark: a faceted core inside a hexagon. Colours come from CSS (.logo-*), so it follows the theme.
+// The Frank AI knot, drawn as the static line-art mark from knot-streamer.css. The shapes come from KNOT_PATHS;
+// colours and stroke widths come from CSS (.knot-logo-mark), so it follows the theme and no inline style is needed.
 export function logoMark(size = 28) {
   const doc = new DOMParser().parseFromString(
-    `<svg xmlns="${NS}" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="logo-hex" d="M16 2.5 28 9.25v13.5L16 29.5 4 22.75V9.25z"/><path class="logo-in" d="M16 9l6.5 3.75v6.5L16 23l-6.5-3.75v-6.5z"/><circle class="logo-dot" cx="16" cy="16" r="2.4"/></svg>`,
+    `<svg xmlns="${NS}" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false"><circle class="knot-logo-static-ring" cx="512" cy="512" r="480"/><path class="knot-logo-static-outer" d="${KNOT_PATHS.outer}"/><path class="knot-logo-static-inner" d="${KNOT_PATHS.inner0}"/><path class="knot-logo-static-inner" d="${KNOT_PATHS.inner1}"/><path class="knot-logo-static-inner" d="${KNOT_PATHS.inner2}"/><path class="knot-logo-static-inner" d="${KNOT_PATHS.inner3}"/></svg>`,
     "image/svg+xml"
   );
-  const svg = document.importNode(doc.documentElement, true);
-  svg.setAttribute("width", size);
-  svg.setAttribute("height", size);
-  return svg;
+  const wrap = document.createElement("span");
+  wrap.className = "knot-logo-static knot-logo-mark";
+  wrap.style.width = wrap.style.height = `${size}px`;
+  wrap.append(document.importNode(doc.documentElement, true));
+  return wrap;
 }

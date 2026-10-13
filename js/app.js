@@ -1,8 +1,9 @@
 import { session, api } from "./api.client.js";
 import { h, clear, badge } from "./dom.util.js";
-import { brand } from "./ui.util.js";
+import { brand, confirmDialog } from "./ui.util.js";
 import { icon } from "./icons.js";
 import { initTheme, themeToggle } from "./theme.js";
+import { KnotStreamer } from "./knot-streamer.js";
 import * as login from "./pages/login.page.js";
 import * as signup from "./pages/signup.page.js";
 import * as forgot from "./pages/forgot.page.js";
@@ -29,7 +30,16 @@ let lastRoute = null;
 
 const routeName = () => location.hash.replace(/^#\/?/, "").split("?")[0];
 
-function logout() {
+// Asks first. Only the confirm button ends the session; Cancel, Esc and a click outside leave it untouched.
+async function logout() {
+  const ok = await confirmDialog({
+    title: "Log out?",
+    body: "You'll need to log in again to manage your keys. Your API keys keep working.",
+    confirmLabel: "Log out",
+    cancelLabel: "Stay logged in",
+    danger: false,
+  });
+  if (!ok) return;
   session.clear();
   location.hash = "#/login";
 }
@@ -94,8 +104,12 @@ function topbar(dev) {
   );
 }
 
-const loading = () =>
-  h("div", { class: "page", "aria-busy": "true" }, h("span", { class: "skel skel-title" }), h("div", { class: "skel-grid" }, h("span", { class: "skel skel-card" }), h("span", { class: "skel skel-card" }), h("span", { class: "skel skel-card" })));
+// The Frank AI knot draws, fades and repeats while a page loads. Colours are theme variables, so it follows light and dark.
+function loading() {
+  const slot = h("div", { class: "page page-loading", role: "status", "aria-busy": "true" }, h("span", { class: "sr-only" }, "Loading"));
+  new KnotStreamer(slot, { size: "96px", colorOuter: "var(--accent-2)", colorInner: "var(--accent)", strokeOuter: 3, strokeInner: 2.2, cycleDuration: 2.4, autoStart: true }).mount();
+  return slot;
+}
 
 // After a real route change: back to the top, a fitting title, and focus moved to the new content.
 function arrive(name, target) {

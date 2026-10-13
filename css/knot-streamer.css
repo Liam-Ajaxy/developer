@@ -1,0 +1,160 @@
+/*
+  FrankAI knot streaming indicator — "Draw, fade, repeat"
+  Traced from FranAI-logo.png (smoothed cubic-bezier outline, not a raster mask).
+  Drop this file in alongside knot-streamer.js.
+*/
+
+.knot-streamer {
+  display: inline-block;
+  width: var(--knot-size, 64px);
+  height: var(--knot-size, 64px);
+}
+
+.knot-streamer svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.knot-streamer path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.knot-streamer .knot-outer {
+  stroke: var(--knot-color-outer, #FFB800);
+  stroke-width: var(--knot-stroke-outer, 10);
+  stroke-dasharray: 1913.2;
+  stroke-dashoffset: 1913.2;
+}
+
+.knot-streamer .knot-inner {
+  stroke: var(--knot-color-inner, #FF8C00);
+  stroke-width: var(--knot-stroke-inner, 7);
+}
+
+.knot-streamer .knot-inner-0 { stroke-dasharray: 510.7; stroke-dashoffset: 510.7; }
+.knot-streamer .knot-inner-1 { stroke-dasharray: 463.6; stroke-dashoffset: 463.6; }
+.knot-streamer .knot-inner-2 { stroke-dasharray: 443.9; stroke-dashoffset: 443.9; }
+.knot-streamer .knot-inner-3 { stroke-dasharray: 439.0; stroke-dashoffset: 439.0; }
+
+/* Circular progress ring — r=480 on a 1024x1024 viewBox gives a
+   circumference of 2*pi*480 ~= 3015.9, used as its dash length below.
+   Drawn UNDERNEATH the knot paths (first in markup order = painted
+   first = behind), so the knot itself always reads on top. */
+.knot-streamer .knot-ring {
+  fill: none;
+  stroke: var(--knot-color-outer, #FFB800);
+  stroke-width: var(--knot-stroke-outer, 10);
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 3015.9;
+  stroke-dashoffset: 3015.9;
+  opacity: 0.55; /* slightly recessed vs. the knot so it reads as a frame, not competing linework */
+}
+
+/* ============================================================
+   STATIC LOGO MARK — same stroke weight/line-art quality as the
+   animated streamer above, but permanently fully drawn (no
+   stroke-dasharray/offset, no animation) and always visible. Used
+   for avatars and other "still image" placements of the brand mark.
+   ============================================================ */
+.knot-logo-static {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+}
+.knot-logo-static svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.knot-logo-static path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  /* No dasharray/dashoffset — fully drawn from the start, no reveal
+     animation, nothing to "wait" on. */
+}
+.knot-logo-static-outer {
+  stroke: var(--knot-color-outer, #FFB800);
+  stroke-width: var(--knot-stroke-outer, 10);
+}
+.knot-logo-static-inner {
+  stroke: var(--knot-color-inner, #FF8C00);
+  stroke-width: var(--knot-stroke-inner, 7);
+}
+.knot-logo-static-ring {
+  fill: none;
+  stroke: var(--knot-color-outer, #FFB800);
+  stroke-width: var(--knot-stroke-outer, 10);
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.55;
+}
+
+/* Draw, fade, repeat — the loop the user picked */
+.knot-streamer.is-streaming .knot-ring {
+  animation: knotDrawFadeRepeat var(--knot-cycle-duration, 1s) ease-in-out infinite;
+}
+.knot-streamer.is-streaming .knot-outer {
+  animation: knotDrawFadeRepeat var(--knot-cycle-duration, 1s) ease-in-out infinite;
+}
+.knot-streamer.is-streaming .knot-inner-0 {
+  animation: knotDrawFadeRepeat var(--knot-cycle-duration, 1s) ease-in-out infinite;
+  animation-delay: 0.28s;
+}
+.knot-streamer.is-streaming .knot-inner-1 {
+  animation: knotDrawFadeRepeat var(--knot-cycle-duration, 1s) ease-in-out infinite;
+  animation-delay: 0.42s;
+}
+.knot-streamer.is-streaming .knot-inner-2 {
+  animation: knotDrawFadeRepeat var(--knot-cycle-duration, 1s) ease-in-out infinite;
+  animation-delay: 0.56s;
+}
+.knot-streamer.is-streaming .knot-inner-3 {
+  animation: knotDrawFadeRepeat var(--knot-cycle-duration, 1s) ease-in-out infinite;
+  animation-delay: 0.70s;
+}
+
+@keyframes knotDrawFadeRepeat {
+  0%   { stroke-dashoffset: var(--dash-len); opacity: 1; }
+  50%  { stroke-dashoffset: 0; opacity: 1; }
+  75%  { stroke-dashoffset: 0; opacity: 0.12; }
+  100% { stroke-dashoffset: var(--dash-len); opacity: 0.12; }
+}
+
+/* Per-path arc length, read by the shared keyframe above via var(--dash-len).
+   Each selector sets its own value, so one @keyframes block works for all
+   five paths despite their different lengths. */
+.knot-streamer .knot-ring    { --dash-len: 3015.9; }
+.knot-streamer .knot-outer   { --dash-len: 1913.2; }
+.knot-streamer .knot-inner-0 { --dash-len: 510.7; }
+.knot-streamer .knot-inner-1 { --dash-len: 463.6; }
+.knot-streamer .knot-inner-2 { --dash-len: 443.9; }
+.knot-streamer .knot-inner-3 { --dash-len: 439.0; }
+
+/* Idle / non-streaming state: fully hidden strokes, no animation running.
+   Explicitly includes .knot-ring since it's a <circle>, not a <path>,
+   so the `path` selector above never matches it. */
+.knot-streamer:not(.is-streaming) path,
+.knot-streamer:not(.is-streaming) .knot-ring {
+  animation: none;
+  opacity: 0;
+}
+
+/* Respect reduced-motion preference: fall back to a simple opacity pulse
+   instead of the draw effect. */
+@media (prefers-reduced-motion: reduce) {
+  .knot-streamer.is-streaming path {
+    animation: knotReducedPulse 1.6s ease-in-out infinite !important;
+    stroke-dashoffset: 0 !important;
+  }
+  @keyframes knotReducedPulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+  }
+}
