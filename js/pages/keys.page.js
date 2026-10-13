@@ -92,6 +92,9 @@ export async function render(container, { profile, refresh }) {
 
   function openEdit(k) {
     const label = h("input", { type: "text", maxlength: 60, value: k.label ?? "" });
+    const assistant = h("input", { type: "text", maxlength: 40, value: k.assistant_name ?? "", placeholder: "Frank AI" });
+    const modelName = h("input", { type: "text", maxlength: 40, value: k.model_name ?? "", placeholder: "Frank AI Sprinta 2" });
+    const company = h("input", { type: "text", maxlength: 40, value: k.company_name ?? "", placeholder: "Islle" });
     const sites = h("textarea", { rows: 3 }, k.origins.filter((o) => !isLocalhost(o)).join("\n"));
     const localhost = h("input", { type: "checkbox", checked: k.origins.some(isLocalhost) });
     const error = errorLine();
@@ -100,6 +103,9 @@ export async function render(container, { profile, refresh }) {
       { class: "stack" },
       h("h3", {}, "Edit key"),
       field("Label", label),
+      field("Assistant name", assistant, "What your assistant calls itself. Leave blank for Frank AI."),
+      field("Model name", modelName, "Leave blank for Frank AI Sprinta 2."),
+      field("Company name", company, "Leave blank for Islle."),
       k.type === "public" ? field("Your site addresses (one per line)", sites) : null,
       k.type === "public" ? h("label", { class: "check" }, localhost, " Also allow http://localhost while I develop") : null,
       error,
@@ -115,7 +121,7 @@ export async function render(container, { profile, refresh }) {
       event.preventDefault();
       error.textContent = "";
       try {
-        const body = { label: label.value };
+        const body = { label: label.value, assistant_name: assistant.value, model_name: modelName.value, company_name: company.value };
         if (k.type === "public") {
           body.origins = lines(sites.value);
           body.allow_localhost = localhost.checked;
