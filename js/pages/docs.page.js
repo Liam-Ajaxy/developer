@@ -29,6 +29,7 @@ const SECTIONS = [
   ["base", "Base URL"],
   ["auth", "Authentication"],
   ["endpoints", "Endpoints"],
+  ["terminal", "Use it from the terminal"],
   ["browser", "Chat from your website"],
   ["server", "Call from your server"],
   ["limits", "Limits"],
@@ -40,7 +41,7 @@ const yes = (text) => h("span", { class: "perm perm-yes" }, icon("yes", 16), tex
 const no = (text) => h("span", { class: "perm perm-no" }, icon("no", 16), text);
 
 export async function render(container, { profile }) {
-  const { public: pub, secret } = profile.limits;
+  const { public: pub, secret, cli } = profile.limits;
   const limitRow = (name, l) => [
     name,
     fmtNumber(l.daily_tokens),
@@ -56,7 +57,7 @@ export async function render(container, { profile }) {
       h(
         "a",
         {
-          href: "#/docs",
+          href: "/docs",
           "data-doc": id,
           onclick: (e) => {
             e.preventDefault(); // the router lives in the hash, so scroll in place instead
@@ -115,6 +116,7 @@ export async function render(container, { profile }) {
             ]
           )
         ),
+        section("terminal", "Use it from the terminal", codeBlock("npm install -g frankai\nfrankai login   # paste a Terminal key from the Keys page\nfrankai explain recursion simply", { title: "terminal", lang: "shell" })),
         section("browser", "Chat from your website", codeBlock(browserSnippet("YOUR_PUBLIC_KEY"), { title: "browser.js" })),
         section("server", "Call from your server", codeBlock(serverSnippet("YOUR_SECRET_KEY"), { title: "server.js" })),
         section(
@@ -122,7 +124,7 @@ export async function render(container, { profile }) {
           "Limits",
           table(
             ["Key type", "Tokens per key per day", "Per visitor per day", "Requests per minute", "Max tokens per reply"],
-            [limitRow("Public", pub), limitRow("Secret", secret)]
+            [limitRow("Public", pub), limitRow("Secret", secret), ...(cli ? [limitRow("Terminal", cli)] : [])]
           ),
           h("p", { class: "muted small" }, "An image counts as 1,000 tokens and a voice clip as 300. Files from /v1/image and /v1/tts are kept for 24 hours.")
         ),

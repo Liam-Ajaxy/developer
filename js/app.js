@@ -4,6 +4,7 @@ import { brand, confirmDialog } from "./ui.util.js";
 import { icon } from "./icons.js";
 import { initTheme, themeToggle } from "./theme.js";
 import { KnotStreamer } from "./knot-streamer.js";
+import { initRouter, navigate, resolve, redirectToLogin, nextTarget, consumeScroll } from "./router.js";
 import * as login from "./pages/login.page.js";
 import * as signup from "./pages/signup.page.js";
 import * as forgot from "./pages/forgot.page.js";
@@ -12,6 +13,7 @@ import * as keys from "./pages/keys.page.js";
 import * as usage from "./pages/usage.page.js";
 import * as docs from "./pages/docs.page.js";
 import * as account from "./pages/account.page.js";
+import * as notfound from "./pages/notfound.page.js";
 
 initTheme();
 
@@ -20,7 +22,7 @@ const loadLanding = () => import("./pages/landing.page.js");
 const PUBLIC = { "": loadLanding, welcome: loadLanding, login, signup, forgot };
 const PRIVATE = { home, keys, usage, docs, account };
 const LINKS = [["home", "Home", "home"], ["keys", "Keys", "key"], ["usage", "Usage", "chart"], ["docs", "Docs", "book"], ["account", "Account", "user"]];
-const TITLES = { "": "Frank AI · Developers", welcome: "Frank AI · Developers", login: "Log in", signup: "Request access", forgot: "Reset password", home: "Home", keys: "Keys", usage: "Usage", docs: "Docs", account: "Account" };
+const TITLES = { "": "Frank AI · Developers", welcome: "Frank AI · Developers", login: "Log in", signup: "Request access", forgot: "Reset password", home: "Home", keys: "Keys", usage: "Usage", docs: "Docs", account: "Account", notfound: "Page not found" };
 const STATUS_KIND = { approved: "good", pending: "warn", suspended: "bad" };
 
 const root = document.getElementById("app");
@@ -28,7 +30,10 @@ let stopPage = null;
 let renderId = 0;
 let lastRoute = null;
 
-const routeName = () => location.hash.replace(/^#\/?/, "").split("?")[0];
+let lastProfile = null; // last known account, so the next private route can draw its shell instantly
+let focusPending = false;
+const announcer = h("div", { class: "sr-only", role: "status", "aria-live": "polite" }); // tells screen readers the page changed
+document.body.append(announcer);
 
 // Asks first. Only the confirm button ends the session; Cancel, Esc and a click outside leave it untouched.
 async function logout() {
@@ -41,7 +46,8 @@ async function logout() {
   });
   if (!ok) return;
   session.clear();
-  location.hash = "#/login";
+  lastProfile = null;
+  navigate("/login", { replace: true });
 }
 
 // A calm stack of dimensional plates for the side of the login screens. Purely decorative.
@@ -83,7 +89,7 @@ function sidebar(dev, active) {
       "div",
       { class: "nav-links" },
       LINKS.map(([name, label, ic]) =>
-        h("a", { href: `#/${name}`, class: name === active ? "nav-link active" : "nav-link", "aria-current": name === active ? "page" : null }, icon(ic, 20), h("span", {}, label))
+        h("a", { href: `/${name}`, class: name === active ? "nav-link active" : "nav-link", "aria-current": name === active ? "page" : null }, icon(ic, 20), h("span", {}, label))
       )
     ),
     h(
@@ -111,28 +117,88 @@ function loading() {
   return slot;
 }
 
-// After a real route change: back to the top, a fitting title, and focus moved to the new content.
+// ---------------------------------------------------------------------------
+// Routing glue. router.js owns the URL; this file owns the screen. The rule is: commit first.
+// The moment the URL changes, the screen for that URL is drawn in the same tick (a loading frame or the page's
+// shell), so the address bar and the page can never disagree while data loads. Late answers for an old URL are dropped.
+// ---------------------------------------------------------------------------
+function setRobots(noindex) {
+  let meta = document.querySelector('meta[name="robots"]');
+  if (!noindex) return meta?.remove();
+  if (!meta) document.head.append((meta = h("meta", { name: "robots" })));
+  meta.setAttribute("content", "noindex");
+}
+
+// Shown at once when there is nothing correct to show yet: first load, or the landing page's lazy chunk.
+function boot() {
+  clear(root);
+  root.append(h("div", { class: "boot" }, loading()));
+}
+
+function mountShell(profile, pageName) {
+  const body = h("main", { class: "main page-enter", id: "main", tabindex: "-1" }, loading());
+  const skip = h("button", { class: "skip-link", type: "button", onclick: () => body.focus() }, "Skip to content");
+  clear(root);
+  root.append(h("div", { class: "shell" }, skip, topbar(profile.developer), sidebar(profile.developer, pageName), body));
+  return body;
+}
+
+// On a real route change: a fitting title (also announced), back to the top, and focus moved to the new content once it exists.
 function arrive(name, target) {
-  document.title = TITLES[name] === "Frank AI · Developers" ? TITLES[name] : `${TITLES[name] ?? "Developers"} · Frank AI`;
-  if (name === lastRoute) return;
-  lastRoute = name;
-  window.scrollTo(0, 0);
-  target?.focus?.({ preventScroll: true });
+  const t = TITLES[name];
+  const full = !t || t === "Frank AI · Developers" ? "Frank AI · Developers" : `${t} · Frank AI`;
+  document.title = full;
+  announcer.textContent = full;
+  if (name !== lastRoute) {
+    lastRoute = name;
+    focusPending = true;
+    window.scrollTo(0, 0);
+  }
+  if (focusPending && target) {
+    target.focus?.({ preventScroll: true });
+    focusPending = false;
+  }
+}
+
+// Back/forward and reloads return to where the person was, once the page has rendered.
+function restoreScroll() {
+  const y = consumeScroll();
+  if (y) window.scrollTo(0, y);
 }
 
 async function show() {
   const id = ++renderId;
   stopPage?.(); // stop the previous page's refresh timer
   stopPage = null;
-  const name = routeName();
+  const route = resolve(); // tidies the address bar in place and says which route this is
+  setRobots(!route.known);
 
-  if (Object.hasOwn(PUBLIC, name)) {
+  // An address that is not a page says so. It never quietly shows some other page.
+  if (!route.known) {
+    const box = h("div", { class: "login-card portal-card" });
+    clear(root);
+    root.append(authShell(box));
+    arrive("notfound", null);
+    try {
+      await notfound.render(box);
+      if (id === renderId) restoreScroll();
+    } catch (err) {
+      fatal(err, id);
+    }
+    return;
+  }
+  const name = route.name;
+
+  if (route.access === "public") {
     if (session.token) {
-      location.hash = "#/home";
+      navigate(nextTarget() ?? "/home", { replace: true });
       return;
     }
+    lastProfile = null;
     let mod = PUBLIC[name];
     if (typeof mod === "function") {
+      boot(); // commit now: the URL and the screen already agree while the chunk loads
+      arrive(name, null);
       try {
         mod = await mod();
       } catch (err) {
@@ -148,8 +214,10 @@ async function show() {
     arrive(name, null);
     try {
       const stop = await mod.render(box);
-      if (id === renderId) stopPage = stop ?? null;
-      else stop?.();
+      if (id === renderId) {
+        stopPage = stop ?? null;
+        restoreScroll();
+      } else stop?.();
     } catch (err) {
       fatal(err, id);
     }
@@ -157,10 +225,14 @@ async function show() {
   }
 
   if (!session.token) {
-    location.hash = "#/login";
+    redirectToLogin();
     return;
   }
-  const pageName = Object.hasOwn(PRIVATE, name) ? name : "home";
+  const pageName = name;
+
+  // Commit first: draw this route's frame now, from the last known account if there is one.
+  let body = lastProfile ? mountShell(lastProfile, pageName) : (boot(), null);
+  arrive(pageName, body);
 
   let profile;
   try {
@@ -170,17 +242,16 @@ async function show() {
     return;
   }
   if (id !== renderId) return;
-
-  const body = h("main", { class: "main page-enter", id: "main", tabindex: "-1" }, loading());
-  const skip = h("button", { class: "skip-link", type: "button", onclick: () => body.focus() }, "Skip to content");
-  clear(root);
-  root.append(h("div", { class: "shell" }, skip, topbar(profile.developer), sidebar(profile.developer, pageName), body));
+  if (!body || profile.developer.status !== lastProfile?.developer.status) body = mountShell(profile, pageName);
+  lastProfile = profile;
   arrive(pageName, body);
 
   try {
     const stop = await PRIVATE[pageName].render(body, { profile, refresh: show });
-    if (id === renderId) stopPage = stop ?? null;
-    else stop?.();
+    if (id === renderId) {
+      stopPage = stop ?? null;
+      restoreScroll();
+    } else stop?.();
   } catch (err) {
     if (id !== renderId || err.code === "login_required") return;
     clear(body);
@@ -188,5 +259,5 @@ async function show() {
   }
 }
 
-window.addEventListener("hashchange", () => show());
+initRouter(() => show());
 show();

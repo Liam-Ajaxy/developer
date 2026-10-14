@@ -1,4 +1,5 @@
 import { api, session } from "../api.client.js";
+import { navigate, nextTarget } from "../router.js";
 import { h } from "../dom.util.js";
 import { brand, field, errorLine, setBusy } from "../ui.util.js";
 
@@ -25,7 +26,7 @@ export async function render(box) {
     try {
       const out = await api("/login", { method: "POST", auth: false, body: { contact: contact.value, password: password.value } });
       session.save(out.token, remember.checked);
-      location.hash = "#/home";
+      navigate(nextTarget() ?? "/home", { replace: true });
     } catch (err) {
       error.textContent = err.message;
       password.select();
@@ -39,6 +40,6 @@ export async function render(box) {
     h("h1", {}, "Developer login"),
     h("p", { class: "muted" }, "Manage your keys, usage and account."),
     form,
-    h("p", { class: "muted small auth-links" }, h("a", { href: "#/forgot" }, "Forgot your password?"), h("span", { "aria-hidden": "true" }, " · "), h("a", { href: "#/signup" }, "Request access"), h("span", { "aria-hidden": "true" }, " · "), h("a", { href: "#/" }, "Back to home"))
+    h("p", { class: "muted small auth-links" }, h("a", { href: "/forgot" }, "Forgot your password?"), h("span", { "aria-hidden": "true" }, " · "), h("a", { href: "/signup" }, "Request access"), h("span", { "aria-hidden": "true" }, " · "), h("a", { href: "/" }, "Back to home"))
   );
 }

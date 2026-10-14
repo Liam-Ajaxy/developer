@@ -1,4 +1,5 @@
 import { api, session } from "../api.client.js";
+import { navigate } from "../router.js";
 import { h, badge } from "../dom.util.js";
 import { icon } from "../icons.js";
 import { field, errorLine, toast, confirmDialog, noticeDialog, setBusy, pageHead } from "../ui.util.js";
@@ -81,7 +82,7 @@ export async function render(container, { profile }) {
       await api("/delete-account", { method: "POST", body: { password: confirmPassword.value } });
       session.clear();
       await noticeDialog({ title: "Account deleted", body: "Your account was deleted." });
-      location.hash = "#/login";
+      navigate("/login", { replace: true });
     } catch (err) {
       deleteError.textContent = err.message;
       setBusy(deleteSubmit, false);

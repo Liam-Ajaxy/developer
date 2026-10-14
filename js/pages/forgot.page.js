@@ -1,4 +1,5 @@
 import { api, session } from "../api.client.js";
+import { navigate } from "../router.js";
 import { h } from "../dom.util.js";
 import { brand, field, errorLine, showSecret, setBusy } from "../ui.util.js";
 
@@ -41,7 +42,7 @@ export async function render(box) {
         secret: out.recovery_code,
         confirmText: "I have saved my new recovery code",
       });
-      location.hash = "#/home";
+      navigate("/home", { replace: true });
     } catch (err) {
       error.textContent = err.message;
     } finally {
@@ -54,6 +55,6 @@ export async function render(box) {
     h("h1", {}, "Reset your password"),
     h("p", { class: "muted" }, "Use your recovery code to set a new password."),
     form,
-    h("p", { class: "muted small auth-links" }, h("a", { href: "#/login" }, "Back to login"))
+    h("p", { class: "muted small auth-links" }, h("a", { href: "/login" }, "Back to login"))
   );
 }

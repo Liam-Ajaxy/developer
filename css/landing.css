@@ -59,7 +59,7 @@
 .cap { position: absolute; pointer-events: auto; }
 .cap button {
   display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; padding: 0 0.95rem 0 0.8rem; border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text); border: 1px solid var(--border-2); font: 500 var(--fs-sm) var(--font-mono); cursor: pointer;
+  background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text); border: 1px solid var(--border-2); box-shadow: var(--shadow-1); font: 500 var(--fs-sm) var(--font-mono); cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast);
 }
 .cap button svg { color: var(--link); }

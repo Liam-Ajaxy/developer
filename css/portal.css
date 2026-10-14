@@ -37,6 +37,7 @@
 @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
 .retry { margin-top: var(--sp-3); }
 .page-loading { align-items: center; justify-content: center; min-height: min(60vh, 480px); }
+.boot { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; }
 
 .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); }
 .lede { color: var(--text-2); margin-top: 0.4rem; max-width: 62ch; }

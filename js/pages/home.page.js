@@ -18,16 +18,16 @@ function banner(dev) {
 // Next steps come only from the account's real state.
 function nextActions(dev, activeCount) {
   const items = [];
-  if (dev.status === "pending") items.push(["Create a key now", "It starts working as soon as you're approved.", "#/keys", "key"]);
-  else if (activeCount === 0 && dev.status !== "suspended") items.push(["Create your first key", "A public key lets your website chat with Frank AI.", "#/keys", "key"]);
+  if (dev.status === "pending") items.push(["Create a key now", "It starts working as soon as you're approved.", "/keys", "key"]);
+  else if (activeCount === 0 && dev.status !== "suspended") items.push(["Create your first key", "A public key lets your website chat with Frank AI.", "/keys", "key"]);
   if (dev.status === "approved" && !dev.secret_allowed) {
     items.push(
       dev.secret_request
-        ? ["Secret key request sent", "It is waiting for review. We'll update your account when we've looked at it.", "#/keys", "lock"]
-        : ["Need image or voice?", "Request secret key access to use /v1/image and /v1/tts from your server.", "#/keys", "lock"]
+        ? ["Secret key request sent", "It is waiting for review. We'll update your account when we've looked at it.", "/keys", "lock"]
+        : ["Need image or voice?", "Request secret key access to use /v1/image and /v1/tts from your server.", "/keys", "lock"]
     );
   }
-  items.push(["Read the API reference", "Endpoints, limits and error codes.", "#/docs", "book"], ["Check your usage", "Daily budgets and recent requests.", "#/usage", "chart"]);
+  items.push(["Read the API reference", "Endpoints, limits and error codes.", "/docs", "book"], ["Check your usage", "Daily budgets and recent requests.", "/usage", "chart"]);
   return h(
     "ul",
     { class: "action-list" },
@@ -84,7 +84,7 @@ export async function render(container, { profile }) {
                 h("p", { class: "muted" }, "Paste this in your website's frontend code and replace YOUR_PUBLIC_KEY with a public key from the Keys page. It only works from the site addresses you registered."),
                 codeBlock(browserSnippet("YOUR_PUBLIC_KEY"), { title: "browser.js" })
               )
-            : h("p", { class: "muted" }, "You have no keys yet. ", h("a", { href: "#/keys" }, "Create your first key"), ".")
+            : h("p", { class: "muted" }, "You have no keys yet. ", h("a", { href: "/keys" }, "Create your first key"), ".")
         ),
         h(
           "div",

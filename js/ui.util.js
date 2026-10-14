@@ -66,12 +66,12 @@ export function copyButton(text, { label = "Copy", what = "text" } = {}) {
   return h("span", {}, btn, status);
 }
 
-export function codeBlock(text, { title = "javascript" } = {}) {
+export function codeBlock(text, { title = "javascript", lang = "js" } = {}) {
   return h(
     "figure",
     { class: "code" },
     h("figcaption", { class: "code-head" }, h("span", {}, title), copyButton(text, { what: "code" })),
-    h("pre", { tabindex: "0", role: "region", "aria-label": `${title} code sample` }, h("code", {}, highlight(text)))
+    h("pre", { tabindex: "0", role: "region", "aria-label": `${title} code sample` }, h("code", {}, highlight(text, lang)))
   );
 }
 export const snippetBlock = (text) => codeBlock(text);

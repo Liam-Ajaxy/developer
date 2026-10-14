@@ -1,4 +1,5 @@
 import { API_BASE } from "./config.js";
+import { redirectToLogin } from "./router.js";
 
 const KEY = "frankai_portal_token";
 
@@ -56,7 +57,7 @@ export async function api(path, { method = "GET", body, auth = true } = {}) {
     );
     if (auth && err.code === "login_required") {
       session.clear();
-      location.hash = "#/login";
+      redirectToLogin();
     }
     throw err;
   }

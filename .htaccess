@@ -1,0 +1,5 @@
+# Apache: serve real files, send every other address to the app.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]

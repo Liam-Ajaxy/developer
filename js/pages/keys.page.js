@@ -23,7 +23,12 @@ export async function render(container, { profile, refresh }) {
     refresh();
   };
 
-  const keySnippet = (type, key) => codeBlock(type === "public" ? browserSnippet(key) : serverSnippet(key), { title: type === "public" ? "browser.js" : "server.js" });
+  const keySnippet = (type, key) =>
+    type === "public"
+      ? codeBlock(browserSnippet(key), { title: "browser.js" })
+      : type === "cli"
+        ? codeBlock("npm install -g frankai\nfrankai login   # paste the key when asked\nfrankai explain recursion simply", { title: "terminal", lang: "shell" })
+        : codeBlock(serverSnippet(key), { title: "server.js" });
 
   const formButtons = (submitLabel, close) => {
     const submit = h("button", { type: "submit", class: "btn" }, submitLabel);
@@ -44,6 +49,7 @@ export async function render(container, { profile, refresh }) {
       { class: "choice-group" },
       h("legend", {}, "Type"),
       choice("public", "Public key", "For your website's frontend. Chat only.", false),
+      choice("cli", "Terminal key", "The Frank AI command line (chat, image, voice).", false),
       choice("secret", "Secret key", canSecret ? "For your server. Chat, image and voice." : "Needs approval first.", !canSecret)
     );
     const label = h("input", { type: "text", maxlength: 60, placeholder: "e.g. portfolio site" });
@@ -58,7 +64,7 @@ export async function render(container, { profile, refresh }) {
     types.addEventListener("change", () => {
       const isPublic = kind() === "public";
       sitesRow.hidden = localRow.hidden = !isPublic;
-      secretNote.hidden = isPublic;
+      secretNote.hidden = kind() !== "secret";
     });
 
     const [submit, buttons] = formButtons("Create key", () => close());

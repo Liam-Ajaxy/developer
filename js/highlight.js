@@ -5,7 +5,25 @@ const KEYWORDS = new Set([
 ]);
 const TOKEN = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/g;
 
-export function highlight(code) {
+// Terminal commands: only "# comments" are coloured (a "#" must start the line or follow a space).
+function highlightShell(code) {
+  const out = document.createDocumentFragment();
+  code.split("\n").forEach((line, i) => {
+    if (i) out.append("\n");
+    const m = /(^|\s)#/.exec(line);
+    const at = m ? m.index + m[1].length : -1;
+    if (at < 0) return void out.append(line);
+    out.append(line.slice(0, at));
+    const span = document.createElement("span");
+    span.className = "tok-c";
+    span.textContent = line.slice(at);
+    out.append(span);
+  });
+  return out;
+}
+
+export function highlight(code, lang = "js") {
+  if (lang === "shell") return highlightShell(code);
   const out = document.createDocumentFragment();
   const span = (cls, text) => {
     const el = document.createElement("span");
