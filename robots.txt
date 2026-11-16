@@ -1,0 +1,12 @@
+# Frank AI Developers. The public pages may be crawled; the signed-in pages are private.
+# The documentation is at https://api.frankai.workers.dev/docs/ (it has its own robots.txt).
+User-agent: *
+Allow: /
+Disallow: /home
+Disallow: /keys
+Disallow: /usage
+Disallow: /docs
+Disallow: /account
+Disallow: /connect
+
+Sitemap: https://developer.frankapi.workers.dev/sitemap.xml

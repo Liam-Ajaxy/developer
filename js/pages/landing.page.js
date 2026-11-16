@@ -2,12 +2,15 @@ import { h } from "../dom.util.js";
 import { icon, logoMark } from "../icons.js";
 import { codeBlock, browserSnippet } from "../ui.util.js";
 import { themeToggle } from "../theme.js";
+import { DOCS_URL } from "../config.js";
 
 export const layout = "full";
 
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const scrollToId = (id) => document.getElementById(id)?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
 const code = (t) => h("code", {}, t);
+// The page of the public documentation that explains each service (the voice page is /docs/voice).
+const DOC_PAGE = { chat: "chat", respond: "respond", image: "image", speech: "voice" };
 
 // Everything below is taken from the portal's own API reference. Nothing here is invented.
 const SERVICES = [
@@ -90,7 +93,7 @@ function nav(cleanups) {
       "div",
       { class: "l-wrap l-nav-inner" },
       h("a", { class: "l-brand", href: "/", "aria-label": "Frank AI Developers, home" }, logoMark(30), h("span", { class: "brand-name" }, "Frank", h("span", {}, "AI"))),
-      h("nav", { class: "l-menu", id: "l-menu", "aria-label": "Main" }, link("services", "Services"), link("integration", "Documentation"), h("a", { class: "btn btn-ghost", href: "/login" }, "Log in"), h("a", { class: "btn", href: "/signup" }, "Get your API key")),
+      h("nav", { class: "l-menu", id: "l-menu", "aria-label": "Main" }, link("services", "Services"), link("integration", "Quick start"), h("a", { href: DOCS_URL }, "Documentation"), h("a", { class: "btn btn-ghost", href: "/login" }, "Log in"), h("a", { class: "btn", href: "/signup" }, "Get your API key")),
       h("div", { class: "l-tools" }, themeToggle(), burger)
     )
   );
@@ -127,8 +130,8 @@ function hero(onPick) {
         { class: "l-hero-copy" },
         h("h1", { id: "hero-title" }, "One key for chat, images and voice."),
         h("p", { class: "l-lead" }, "Four REST endpoints you can call from your website or your server. Public keys keep chat safe in the browser. Secret keys unlock image and speech on your backend."),
-        h("div", { class: "l-cta" }, h("a", { class: "btn btn-lg", href: "/signup" }, "Get Your API Key"), h("button", { class: "btn btn-lg btn-ghost", type: "button", onclick: () => scrollToId("integration") }, "Explore Documentation")),
-        h("p", { class: "l-note" }, icon("shield", 18), "Every account is reviewed by hand. You can create a key right away and it goes live once you're approved.")
+        h("div", { class: "l-cta" }, h("a", { class: "btn btn-lg", href: "/signup" }, "Get Your API Key"), h("a", { class: "btn btn-lg btn-ghost", href: DOCS_URL }, "Explore Documentation")),
+        h("p", { class: "l-note" }, icon("shield", 18), "Every account is reviewed by hand. You can create a key right away and it goes live once you're approved. It is free and never asks for a credit card or any payment.")
       ),
       h("div", { class: "scene-wrap" }, stage, chips)
     )
@@ -169,7 +172,7 @@ function services() {
       h(
         "div",
         { class: `svc-panel svc-${s.id}`, role: "tabpanel", id: `panel-${s.id}`, "aria-labelledby": `tab-${s.id}`, hidden: i !== 0, tabindex: "0" },
-        h("div", { class: "svc-info" }, h("h3", {}, s.name), h("p", {}, s.desc), h("dl", { class: "svc-io" }, row("Endpoint", h("dd", {}, code(`POST ${s.path}`))), row("You send", sendEl), row("You get", getEl), row("Key", h("dd", {}, s.key))), h("a", { class: "svc-link", href: "/docs" }, "Full reference in the portal", icon("arrow", 16))),
+        h("div", { class: "svc-info" }, h("h3", {}, s.name), h("p", {}, s.desc), h("dl", { class: "svc-io" }, row("Endpoint", h("dd", {}, code(`POST ${s.path}`))), row("You send", sendEl), row("You get", getEl), row("Key", h("dd", {}, s.key))), h("a", { class: "svc-link", href: `${DOCS_URL}${DOC_PAGE[s.id]}` }, "Full reference", icon("arrow", 16))),
         viz
       )
     );
@@ -215,7 +218,7 @@ function integration() {
       "div",
       { class: "l-wrap" },
       h("h2", { id: "int-title", class: "l-h2" }, "Chat from your website in one fetch."),
-      h("p", { class: "l-sub" }, "Use a public key in the browser. It works only from the sites you register. Limits, error codes and the full reference are in the portal docs once you're logged in."),
+      h("p", { class: "l-sub" }, "Use a public key in the browser. It works only from the sites you register. Limits, error codes and the full reference are in the ", h("a", { href: DOCS_URL }, "documentation"), "."),
       h(
         "div",
         { class: "int-grid", "data-reveal": "" },
@@ -241,7 +244,7 @@ function closing() {
 }
 
 function footer() {
-  return h("footer", { class: "l-footer" }, h("div", { class: "l-wrap l-footer-inner" }, h("a", { class: "l-brand", href: "/", "aria-label": "Frank AI Developers, home" }, logoMark(24), h("span", { class: "brand-name" }, "Frank", h("span", {}, "AI"))), h("nav", { "aria-label": "Footer" }, h("a", { href: "/login" }, "Log in"), h("a", { href: "/signup" }, "Request access"), h("a", { href: "/forgot" }, "Reset password"))));
+  return h("footer", { class: "l-footer" }, h("div", { class: "l-wrap l-footer-inner" }, h("a", { class: "l-brand", href: "/", "aria-label": "Frank AI Developers, home" }, logoMark(24), h("span", { class: "brand-name" }, "Frank", h("span", {}, "AI"))), h("nav", { "aria-label": "Footer" }, h("a", { href: DOCS_URL }, "Documentation"), h("a", { href: "/login" }, "Log in"), h("a", { href: "/signup" }, "Request access"), h("a", { href: "/forgot" }, "Reset password"))));
 }
 
 export async function render(box) {

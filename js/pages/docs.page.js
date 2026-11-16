@@ -1,4 +1,4 @@
-import { API_BASE } from "../config.js";
+import { API_BASE, DOCS_URL } from "../config.js";
 import { h, badge, table, fmtNumber } from "../dom.util.js";
 import { icon } from "../icons.js";
 import { codeBlock, browserSnippet, serverSnippet, copyButton, pageHead } from "../ui.util.js";
@@ -89,7 +89,7 @@ export async function render(container, { profile }) {
       h(
         "div",
         { class: "docs-body" },
-        section("base", "Base URL", h("div", { class: "base-url" }, h("code", {}, API_BASE), copyButton(API_BASE, { what: "base URL" }))),
+        section("base", "Base URL", h("div", { class: "base-url" }, h("code", {}, API_BASE), copyButton(API_BASE, { what: "base URL" })), h("p", { class: "muted small" }, "Full guides, examples and the OpenAPI file: ", h("a", { href: DOCS_URL }, "public documentation"), ".")),
         section(
           "auth",
           "Authentication",
