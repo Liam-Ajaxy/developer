@@ -2,6 +2,9 @@ import { api, session } from "../api.client.js";
 import { navigate } from "../router.js";
 import { h } from "../dom.util.js";
 import { brand, field, errorLine, showSecret, setBusy } from "../ui.util.js";
+import { DOCS_URL } from "../config.js";
+
+const docLink = (page, text) => h("a", { href: `${DOCS_URL}${page}`, target: "_blank", rel: "noopener" }, text);
 
 export async function render(box) {
   const name = h("input", { type: "text", maxlength: 80, required: true, autocomplete: "name" });
@@ -23,7 +26,12 @@ export async function render(box) {
     field("Repeat password", again),
     field("What are you building? (optional)", note),
     h("label", { class: "hp", "aria-hidden": "true" }, "Leave this empty ", trap),
-    h("label", { class: "check" }, accept, " I agree to the usage rules: no abuse, no illegal content, and I won't share my keys."),
+    h(
+      "label",
+      { class: "check" },
+      accept,
+      h("span", {}, " I agree to the ", docLink("rules", "usage rules"), " (one account per person, no abuse, no illegal content, and I won't share my keys), the ", docLink("terms", "terms of use"), " and the ", docLink("privacy", "privacy policy"), ".")
+    ),
     error,
     submit
   );
